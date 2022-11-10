@@ -130,7 +130,22 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
 
     // Нажали кнопку, перешли в кастом режим
     if (modeSwitcher == 1) {
-      customModeHandler();
+      static int executionTime = 1000 // (ms)
+      static unsigned long currentMillis = 0, lastMillis = 0;
+      static bool isTimerInitialized = false;
+      if (!isTimerInitialized) {
+        currentMillis = millis();
+        lastMillis = currentMillis; 
+        isTimerInitialized = true; 
+      }
+
+      currentMillis = millis();
+      // Если таймер не превысил диапазон
+      if ((currentMillis - lastMillis) < executionTime) {
+        customModeHandler();
+      } else {
+        isTimerInitialized = false;
+      }
 
     }
     //  Отпустили кнопку, стандартный режим
