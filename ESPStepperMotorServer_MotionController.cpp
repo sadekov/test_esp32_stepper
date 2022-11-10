@@ -33,12 +33,13 @@
 
 // initialization
 
-ESPStepperMotorServer_MotionController::customModeHandler();
+void ESPStepperMotorServer_MotionController::rtosBlinkLed(int ledFlashPeriod);
+void ESPStepperMotorServer_MotionController::customModeHandler();
 
 // declaration
 
 // ------------------------------------------------------
-static void rtosBlinkLed(int ledFlashPeriod) {
+void ESPStepperMotorServer_MotionController::rtosBlinkLed(int ledFlashPeriod) {
   static bool isInitialized = false;
   if (isInitialized) {
     digitalWrite(ledPin, HIGH);
@@ -56,7 +57,8 @@ static void rtosBlinkLed(int ledFlashPeriod) {
   
 }
 
-ESPStepperMotorServer_MotionController::customModeHandler(){
+
+void ESPStepperMotorServer_MotionController::customModeHandler(){
   float posFrom = 10.0;
   float posTo = 100.0;
   float decrIncr = 1.0;
