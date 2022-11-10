@@ -73,6 +73,8 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   const int ledPin = GPIO_NUM_2;
   pinMode(magicKey, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);
+
+  int modeSwitcher = 0; // 0-server, 1-custom
   //-------------------------------------------------------
 #ifndef ESPStepperMotorServer_COMPILE_NO_WEB
   int updateCounter = 0;
@@ -80,7 +82,14 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   while (true)
   {
     //-------------------------------------------------------
-    if (digitalRead(magicKey) == 1) {
+    if (digitalRead(magicKey) == 0) {
+      modeSwitcher = 1;
+
+    }
+
+    // Нажали кнопку, пере шли в кастом режим
+    if (modeSwitcher == 1) {
+
       const int ledFlashPeriod = 200;
       digitalWrite(ledPin, HIGH);
       vTaskDelay(ledFlashPeriod);
@@ -88,78 +97,78 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
       vTaskDelay(ledFlashPeriod);
       //moveToPositionInMillimeters(10.0);
       //moveToPositionInMillimeters(100.0);
-      return;
-
+      
     }
-    //-------------------------------------------------------
-    
-    allMovementsCompleted = true;
-    //update positions of all steppers / trigger stepping if needed
-    for (byte i = 0; i < ESPServerMaxSteppers; i++)
-    {
-      if (configuredFlexySteppers[i])
+    //  Отпустили кнопку, стандартный режим
+    else if (modeSwitcher == 0) {
+      allMovementsCompleted = true;
+      //update positions of all steppers / trigger stepping if needed
+      for (byte i = 0; i < ESPServerMaxSteppers; i++)
       {
-        if (!configuredFlexySteppers[i]->processMovement())
+        if (configuredFlexySteppers[i])
         {
-          allMovementsCompleted = false;
-        }
-      }
-      else
-      {
-        break;
-      }
-    }
-
-    if (allMovementsCompleted && ref->serverRef->_isRebootScheduled)
-    {
-      //going for reboot since all motion is stopped and reboot has been requested
-      Serial.println("Rebooting server now");
-      ESP.restart();
-    }
-
-    //check for emergency switch
-    if (ref->serverRef->emergencySwitchIsActive && !emergencySwitchFlag)
-    {
-      emergencySwitchFlag = true;
-      ESPStepperMotorServer_Logger::logInfo("Emergency Switch triggered");
-    }
-    else if (!ref->serverRef->emergencySwitchIsActive && emergencySwitchFlag)
-    {
-      emergencySwitchFlag = false;
-    }
-
-#ifndef ESPStepperMotorServer_COMPILE_NO_WEB
-    //check if we should send updated position information via websocket
-    if (ref->serverRef->isWebserverEnabled)
-    {
-      updateCounter++;
-      //we only send sproadically to reduce load and processing times
-      if (updateCounter % 200000 == 0 && ref->serverRef->webSockerServer->count() > 0)
-      {
-        String positionsString = String("{");
-        char segmentBuffer[500];
-        bool isFirstSegment = true;
-        for (byte n = 0; n < ESPServerMaxSteppers; n++)
-        {
-          if (configuredFlexySteppers[n])
+          if (!configuredFlexySteppers[i]->processMovement())
           {
-            if (!isFirstSegment)
-            {
-              positionsString += ",";
-            }
-            sprintf(segmentBuffer, "\"s%ipos\":%ld, \"s%ivel\":%.3f", n, configuredFlexySteppers[n]->getCurrentPositionInSteps(), n, configuredFlexySteppers[n]->getCurrentVelocityInStepsPerSecond());
-            //maybe register as friendly class and access property directly and save some processing time
-            positionsString += segmentBuffer;
-            isFirstSegment = false;
+            allMovementsCompleted = false;
           }
         }
-        positionsString += "}";
-
-        ref->serverRef->sendSocketMessageToAllClients(positionsString.c_str(), positionsString.length());
-        updateCounter = 0;
+        else
+        {
+          break;
+        }
       }
+
+      if (allMovementsCompleted && ref->serverRef->_isRebootScheduled)
+      {
+        //going for reboot since all motion is stopped and reboot has been requested
+        Serial.println("Rebooting server now");
+        ESP.restart();
+      }
+
+      //check for emergency switch
+      if (ref->serverRef->emergencySwitchIsActive && !emergencySwitchFlag)
+      {
+        emergencySwitchFlag = true;
+        ESPStepperMotorServer_Logger::logInfo("Emergency Switch triggered");
+      }
+      else if (!ref->serverRef->emergencySwitchIsActive && emergencySwitchFlag)
+      {
+        emergencySwitchFlag = false;
+      }
+
+  #ifndef ESPStepperMotorServer_COMPILE_NO_WEB
+      //check if we should send updated position information via websocket
+      if (ref->serverRef->isWebserverEnabled)
+      {
+        updateCounter++;
+        //we only send sproadically to reduce load and processing times
+        if (updateCounter % 200000 == 0 && ref->serverRef->webSockerServer->count() > 0)
+        {
+          String positionsString = String("{");
+          char segmentBuffer[500];
+          bool isFirstSegment = true;
+          for (byte n = 0; n < ESPServerMaxSteppers; n++)
+          {
+            if (configuredFlexySteppers[n])
+            {
+              if (!isFirstSegment)
+              {
+                positionsString += ",";
+              }
+              sprintf(segmentBuffer, "\"s%ipos\":%ld, \"s%ivel\":%.3f", n, configuredFlexySteppers[n]->getCurrentPositionInSteps(), n, configuredFlexySteppers[n]->getCurrentVelocityInStepsPerSecond());
+              //maybe register as friendly class and access property directly and save some processing time
+              positionsString += segmentBuffer;
+              isFirstSegment = false;
+            }
+          }
+          positionsString += "}";
+
+          ref->serverRef->sendSocketMessageToAllClients(positionsString.c_str(), positionsString.length());
+          updateCounter = 0;
+        }
+      }
+  #endif
     }
-#endif
   }
 }
 
