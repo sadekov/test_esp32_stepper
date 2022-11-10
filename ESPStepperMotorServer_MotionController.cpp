@@ -83,11 +83,12 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   {
     //-------------------------------------------------------
     if (digitalRead(magicKey) == 0) {
-      modeSwitcher = 1;
-
+      modeSwitcher = 1; // кнопка нажата, кастом режим
+    } else { 
+      modeSwitcher = 0;
     }
 
-    // Нажали кнопку, пере шли в кастом режим
+    // Нажали кнопку, перешли в кастом режим
     if (modeSwitcher == 1) {
 
       const int ledFlashPeriod = 200;
