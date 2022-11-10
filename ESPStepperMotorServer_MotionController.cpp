@@ -31,13 +31,47 @@
 
 #include <ESPStepperMotorServer_MotionController.h>
 
+// initialization
+
+ESPStepperMotorServer_MotionController::customModeHandler();
+
+// declaration
 
 // ------------------------------------------------------
 static void rtosBlinkLed(int ledFlashPeriod) {
-  digitalWrite(ledPin, HIGH);
-  vTaskDelay(ledFlashPeriod);
-  digitalWrite(ledPin, LOW);
-  vTaskDelay(ledFlashPeriod);
+  static bool isInitialized = false;
+  if (isInitialized) {
+    digitalWrite(ledPin, HIGH);
+    vTaskDelay(ledFlashPeriod);
+    digitalWrite(ledPin, LOW);
+    vTaskDelay(ledFlashPeriod);
+
+  } else {
+    const int magicKey = GPIO_NUM_22;
+    const int ledPin = GPIO_NUM_2;
+    pinMode(magicKey, INPUT_PULLUP);
+    pinMode(ledPin, OUTPUT);
+  
+  }
+  
+}
+
+ESPStepperMotorServer_MotionController::customModeHandler(){
+  float posFrom = 10.0;
+  float posTo = 100.0;
+  float decrIncr = 1.0;
+  static float currentPos = posFrom; 
+  float step = 1.0;
+
+  configuredFlexySteppers[0]->moveToPositionInMillimeters(currentPos);
+  if (currentPos > posTo) {
+    decrIncr = -1.0;
+  } else if (currentPos < posFrom) {
+    decrIncr = 1.0;
+  }
+
+  currentPos += decrIncr;
+  
 }
 //-------------------------------------------------------
 
@@ -79,10 +113,7 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   bool allMovementsCompleted = true;
 
   //-------------------------------------------------------
-  const int magicKey = GPIO_NUM_22;
-  const int ledPin = GPIO_NUM_2;
-  pinMode(magicKey, INPUT_PULLUP);
-  pinMode(ledPin, OUTPUT);
+  
 
   int modeSwitcher = 0; // 0-server, 1-custom
   //-------------------------------------------------------
@@ -99,20 +130,7 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
 
     // Нажали кнопку, перешли в кастом режим
     if (modeSwitcher == 1) {
-      float posFrom = 10.0;
-      float posTo = 100.0;
-      float decrIncr = 1.0;
-      static float currentPos = posFrom; 
-      float step = 1.0;
-
-      configuredFlexySteppers[0]->moveToPositionInMillimeters(currentPos);
-      if (currentPos > posTo) {
-        decrIncr = -1.0;
-      } else if (currentPos < posFrom) {
-        decrIncr = 1.0;
-      }
-
-      currentPos += decrIncr;
+      customModeHandler();
 
     }
     //  Отпустили кнопку, стандартный режим
