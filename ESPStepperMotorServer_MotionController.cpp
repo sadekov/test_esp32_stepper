@@ -31,6 +31,16 @@
 
 #include <ESPStepperMotorServer_MotionController.h>
 
+
+// ------------------------------------------------------
+static void rtosBlinkLed(int ledFlashPeriod) {
+  digitalWrite(ledPin, HIGH);
+  vTaskDelay(ledFlashPeriod);
+  digitalWrite(ledPin, LOW);
+  vTaskDelay(ledFlashPeriod);
+}
+//-------------------------------------------------------
+
 //
 // constructor for the motion controller module
 // creates a freeRTOS Task that runs in the background and triggers the motion updates for the stepper driver
@@ -89,14 +99,21 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
 
     // Нажали кнопку, перешли в кастом режим
     if (modeSwitcher == 1) {
-      // const int ledFlashPeriod = 200;
-      // digitalWrite(ledPin, HIGH);
-      // vTaskDelay(ledFlashPeriod);
-      // digitalWrite(ledPin, LOW);
-      // vTaskDelay(ledFlashPeriod);
-      moveToPositionInMillimeters(10.0);
-      moveToPositionInMillimeters(100.0);
-      
+      float posFrom = 10.0;
+      float posTo = 100.0;
+      float decrIncr = 1.0;
+      static float currentPos = posFrom; 
+      float step = 1.0;
+
+      configuredFlexySteppers[0]->moveToPositionInMillimeters(currentPos);
+      if (currentPos > posTo) {
+        decrIncr = -1.0;
+      } else if (currentPos < posFrom) {
+        decrIncr = 1.0;
+      }
+
+      currentPos += decrIncr;
+
     }
     //  Отпустили кнопку, стандартный режим
     else if (modeSwitcher == 0) {
