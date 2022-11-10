@@ -67,6 +67,11 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   ESP_FlexyStepper **configuredFlexySteppers = configuration->getConfiguredFlexySteppers();
   bool emergencySwitchFlag = false;
   bool allMovementsCompleted = true;
+
+  //-------------------------------------------------------
+  const int magicKey = ______
+  pinMode(magicKey, INPUT_PULLUP);
+  //-------------------------------------------------------
 #ifndef ESPStepperMotorServer_COMPILE_NO_WEB
   int updateCounter = 0;
 #endif
@@ -83,7 +88,7 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
       //moveToPositionInMillimeters(10.0);
       //moveToPositionInMillimeters(100.0);
       return;
-      
+
     }
     //-------------------------------------------------------
     
