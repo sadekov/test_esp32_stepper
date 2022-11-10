@@ -79,8 +79,7 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
 #ifndef ESPStepperMotorServer_COMPILE_NO_WEB
   int updateCounter = 0;
 #endif
-  while (true)
-  {
+  while (true) {
     //-------------------------------------------------------
     if (digitalRead(magicKey) == 0) {
       modeSwitcher = 1; // кнопка нажата, кастом режим
@@ -90,70 +89,56 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
 
     // Нажали кнопку, перешли в кастом режим
     if (modeSwitcher == 1) {
-
-      const int ledFlashPeriod = 200;
-      digitalWrite(ledPin, HIGH);
-      vTaskDelay(ledFlashPeriod);
-      digitalWrite(ledPin, LOW);
-      vTaskDelay(ledFlashPeriod);
-      //moveToPositionInMillimeters(10.0);
-      //moveToPositionInMillimeters(100.0);
+      // const int ledFlashPeriod = 200;
+      // digitalWrite(ledPin, HIGH);
+      // vTaskDelay(ledFlashPeriod);
+      // digitalWrite(ledPin, LOW);
+      // vTaskDelay(ledFlashPeriod);
+      moveToPositionInMillimeters(10.0);
+      moveToPositionInMillimeters(100.0);
       
     }
     //  Отпустили кнопку, стандартный режим
     else if (modeSwitcher == 0) {
       allMovementsCompleted = true;
       //update positions of all steppers / trigger stepping if needed
-      for (byte i = 0; i < ESPServerMaxSteppers; i++)
-      {
-        if (configuredFlexySteppers[i])
-        {
-          if (!configuredFlexySteppers[i]->processMovement())
-          {
+      for (byte i = 0; i < ESPServerMaxSteppers; i++) {
+        if (configuredFlexySteppers[i]) {
+          if (!configuredFlexySteppers[i]->processMovement()) {
             allMovementsCompleted = false;
           }
-        }
-        else
-        {
+        } else {
           break;
         }
       }
 
-      if (allMovementsCompleted && ref->serverRef->_isRebootScheduled)
-      {
+      if (allMovementsCompleted && ref->serverRef->_isRebootScheduled) {
         //going for reboot since all motion is stopped and reboot has been requested
         Serial.println("Rebooting server now");
         ESP.restart();
       }
 
       //check for emergency switch
-      if (ref->serverRef->emergencySwitchIsActive && !emergencySwitchFlag)
-      {
+      if (ref->serverRef->emergencySwitchIsActive && !emergencySwitchFlag) {
         emergencySwitchFlag = true;
         ESPStepperMotorServer_Logger::logInfo("Emergency Switch triggered");
-      }
-      else if (!ref->serverRef->emergencySwitchIsActive && emergencySwitchFlag)
-      {
+
+      } else if (!ref->serverRef->emergencySwitchIsActive && emergencySwitchFlag) {
         emergencySwitchFlag = false;
       }
 
   #ifndef ESPStepperMotorServer_COMPILE_NO_WEB
       //check if we should send updated position information via websocket
-      if (ref->serverRef->isWebserverEnabled)
-      {
+      if (ref->serverRef->isWebserverEnabled) {
         updateCounter++;
         //we only send sproadically to reduce load and processing times
-        if (updateCounter % 200000 == 0 && ref->serverRef->webSockerServer->count() > 0)
-        {
+        if (updateCounter % 200000 == 0 && ref->serverRef->webSockerServer->count() > 0) {
           String positionsString = String("{");
           char segmentBuffer[500];
           bool isFirstSegment = true;
-          for (byte n = 0; n < ESPServerMaxSteppers; n++)
-          {
-            if (configuredFlexySteppers[n])
-            {
-              if (!isFirstSegment)
-              {
+          for (byte n = 0; n < ESPServerMaxSteppers; n++) {
+            if (configuredFlexySteppers[n]) {
+              if (!isFirstSegment) {
                 positionsString += ",";
               }
               sprintf(segmentBuffer, "\"s%ipos\":%ld, \"s%ivel\":%.3f", n, configuredFlexySteppers[n]->getCurrentPositionInSteps(), n, configuredFlexySteppers[n]->getCurrentVelocityInStepsPerSecond());
@@ -173,8 +158,7 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   }
 }
 
-void ESPStepperMotorServer_MotionController::stop()
-{
+void ESPStepperMotorServer_MotionController::stop() {
   vTaskDelete(this->xHandle);
   this->xHandle = NULL;
   ESPStepperMotorServer_Logger::logInfo("Motion Controller stopped");
