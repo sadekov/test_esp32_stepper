@@ -69,8 +69,10 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   bool allMovementsCompleted = true;
 
   //-------------------------------------------------------
-  const int magicKey = ______
+  const int magicKey = GPIO_NUM_22;
+  const int ledPin = GPIO_NUM_2;
   pinMode(magicKey, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
   //-------------------------------------------------------
 #ifndef ESPStepperMotorServer_COMPILE_NO_WEB
   int updateCounter = 0;
@@ -79,7 +81,6 @@ void ESPStepperMotorServer_MotionController::processMotionUpdates(void *paramete
   {
     //-------------------------------------------------------
     if (digitalRead(magicKey) == 1) {
-      const int ledPin = 2;
       const int ledFlashPeriod = 200;
       digitalWrite(ledPin, HIGH);
       vTaskDelay(ledFlashPeriod);
